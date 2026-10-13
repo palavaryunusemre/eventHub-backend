@@ -1,0 +1,172 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventhub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: eventhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eventhub-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: eventhub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eventhub-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: eventhub-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - eventhub-net
+
+  # Opsiyonel yönetim arayüzü — Elasticsearch indekslerini görsel incelemek için
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: eventhub-kibana
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - eventhub-net
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.3
+    container_name: eventhub-filebeat
+    user: root
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./app-logs:/var/log/eventhub:ro
+      - filebeat_data:/usr/share/filebeat/data
+    command: ["--strict.perms=false"]
+    networks:
+      - eventhub-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: eventhub-grafana
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - eventhub-net
+
+  eventhub-backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: eventhub-backend:latest
+    container_name: eventhub-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USER_PASSWORD: ${USER_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # HTTPS'nin arkasında (reverse proxy/prod) true yap ki jwt cookie'si yalnızca https ile gitsin.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      LOG_PATH: /app-logs
+      JAVA_OPTS: -Xms256m -Xmx1024m
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./app-logs:/app-logs
+    networks:
+      - eventhub-net
+
+  eventhub-frontend:
+    build:
+      context: ../../eventhub-frontend
+      dockerfile: Dockerfile
+    image: eventhub-frontend:latest
+    container_name: eventhub-frontend
+    restart: unless-stopped
+    depends_on:
+      eventhub-backend:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    networks:
+      - eventhub-net
+
+volumes:
+  postgres_data:
+  es_data:
+  grafana_data:
+  filebeat_data:
+  redis_data:
+
+networks:
+  eventhub-net:
+    driver: bridge

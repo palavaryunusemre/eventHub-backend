@@ -1,0 +1,30 @@
+apiVersion: 1
+
+datasources:
+  - name: Elasticsearch-Logs
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: "eventhub-logs-*"
+    isDefault: true
+    jsonData:
+      timeField: "@timestamp"
+      esVersion: "8.0.0"
+      logMessageField: message
+      logLevelField: level
+      maxConcurrentShardRequests: 5
+    editable: true
+
+  - name: Postgres-EventHub
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: eventhub
+    user: postgres
+    secureJsonData:
+      password: WQrsCsKnVfB7x0h5
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    editable: true

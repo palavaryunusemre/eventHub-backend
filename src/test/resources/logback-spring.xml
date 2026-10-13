@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Varsayılan: proje kökünde ./app-logs. Değiştirmek için uygulamayı
+         -DLOG_PATH=/mutlak/yol/docker-stack/app-logs ile başlat. -->
+    <property name="LOG_PATH" value="${LOG_PATH:-app-logs}"/>
+
+    <!-- Konsola da normal şekilde yazmaya devam et (IDE / docker logs için) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Filebeat'in okuyacağı JSON log dosyası -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/app.json</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <customFields>{"service":"eventhub-backend"}</customFields>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.%i.json</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_JSON"/>
+    </root>
+
+    <!-- Gürültülü kütüphaneleri kıs -->
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.springframework" level="INFO"/>
+
+</configuration>

@@ -1,0 +1,14 @@
+target
+app-logs
+docker-stack
+.git
+.gitignore
+.gitattributes
+.idea
+*.iml
+*.iws
+*.ipr
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+README.md
+*.log

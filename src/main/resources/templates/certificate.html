@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Sertifika</title>
+    <style>
+        @page { size: A4 landscape; margin: 0; }
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 60px;
+            border: 10px solid #2b3a67;
+            text-align: center;
+        }
+        h1 { font-size: 20px; letter-spacing: 4px; color: #2b3a67; text-transform: uppercase; }
+        .title { font-size: 42px; font-weight: bold; margin: 30px 0; color: #1a1a1a; }
+        .attendee { font-size: 28px; margin: 20px 0; color: #2b3a67; }
+        .event { font-size: 20px; margin: 10px 0; }
+        .meta { font-size: 12px; color: #555; margin-top: 40px; }
+        .qr { margin-top: 20px; }
+        .qr img { width: 100px; height: 100px; }
+        .code { font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+<h1>EventHub Katılım Sertifikası</h1>
+<div class="title">Başarı Sertifikası</div>
+<p>Bu sertifika</p>
+<div class="attendee" th:text="${attendeeName}">Katılımcı Adı</div>
+<p>kişisinin aşağıdaki etkinliğe katılımını onaylar:</p>
+<div class="event" th:text="${eventTitle}">Etkinlik Başlığı</div>
+<div class="meta">
+    <span th:text="'Etkinlik tarihi: ' + ${#dates.format(eventStartAt, 'dd.MM.yyyy')}">Etkinlik tarihi</span><br/>
+    <span th:text="'Sertifika verilme tarihi: ' + ${#dates.format(issuedAt, 'dd.MM.yyyy')}">Sertifika tarihi</span>
+</div>
+<div class="qr">
+    <img th:if="${qrCodeBase64 != null and qrCodeBase64 != ''}" th:src="'data:image/png;base64,' + ${qrCodeBase64}" alt="QR"/>
+</div>
+<div class="code" th:text="'Doğrulama kodu: ' + ${certificateCode}">Doğrulama kodu</div>
+<div class="code" th:text="${verificationUrl}">Doğrulama bağlantısı</div>
+</body>
+</html>

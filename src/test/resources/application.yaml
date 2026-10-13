@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: event-hub
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  cache:
+    type: none
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  datasource:
+    url: jdbc:postgresql://localhost:5433/eventhub
+    username: postgres
+    password: test
+  security:
+    user:
+      name: admin
+      password: test
+    jwt:
+      secret-key: dGVzdC1zZWNyZXQta2V5LWZvci1qd3Qtc2lnbmluZy1vbmx5LWxvY2FsLXVzZQ==
+      # HTTPS arkasındaki prod ortamda true yapılmalı (cookie yalnızca https üzerinden gönderilir).
+      cookie-secure: false
+  mail:
+    host: localhost
+    port: 1025
+    username:
+    password:

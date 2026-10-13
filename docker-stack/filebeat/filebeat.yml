@@ -1,0 +1,33 @@
+filebeat.inputs:
+  - type: filestream
+    id: eventhub-app-logs
+    enabled: true
+    paths:
+      - /var/log/eventhub/*.json
+    parsers:
+      - ndjson:
+          target: ""
+          overwrite_keys: true
+          add_error_key: true
+          expand_keys: true
+    fields:
+      service:
+        name: eventhub-backend
+    fields_under_root: true
+
+processors:
+  - drop_fields:
+      fields: ["agent", "ecs", "input", "log.offset"]
+      ignore_missing: true
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "eventhub-logs-%{+yyyy.MM.dd}"
+
+setup.template.name: "eventhub-logs"
+setup.template.pattern: "eventhub-logs-*"
+setup.ilm.enabled: false
+
+logging.level: info
+logging.to_files: false
+logging.to_stderr: true
