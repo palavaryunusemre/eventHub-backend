@@ -4,7 +4,7 @@
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-INSERT INTO "user" (
+INSERT INTO users (
     id, email, first_name, last_name, password, role,
     delete_flag, institution, institution_email_verified,
     created_at, updated_at
@@ -50,4 +50,4 @@ INSERT INTO "user" (
     )
 ON CONFLICT (email) DO NOTHING;
 
-SELECT email, role, created_at FROM "user" ORDER BY created_at;
+SELECT email, role, created_at FROM users ORDER BY created_at;

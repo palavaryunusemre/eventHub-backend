@@ -29,7 +29,10 @@ import java.util.UUID;
 // equals/hashCode sadece id üzerinden karşılaştırılıyor ki lazy "institution" ilişkisi LazyInitializationException'a yol açmasın.
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table
+// "user" Postgres'te ayrılmış (reserved) bir kelime — Hibernate ALTER TABLE
+// DDL'lerinde bunu tırnaksız ürettiği için sütun/FK eklerken syntax error alınıyordu.
+// Tablo adını açıkça "users" yaparak bu çakışmayı tamamen ortadan kaldırıyoruz.
+@Table(name = "users")
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
