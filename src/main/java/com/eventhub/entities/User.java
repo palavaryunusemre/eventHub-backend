@@ -37,6 +37,7 @@ public class User implements UserDetails {
     private UUID id;
     @Email
     @NotNull
+    @Column(unique = true)
     private String email;
     @NotNull
     @NotBlank
@@ -47,6 +48,7 @@ public class User implements UserDetails {
     @NotNull
     @NotBlank
     private String password;
+    @Enumerated(EnumType.STRING)
     private Role role;
     private Boolean deleteFlag;
     @ManyToOne(fetch = FetchType.LAZY)
